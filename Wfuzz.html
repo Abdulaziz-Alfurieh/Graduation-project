@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Wfuzz Web Fuzzer - Security Suite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="js/auth-helper.js"></script>
+<style>
+body{font-family:'Inter',sans-serif}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+.glass{background:rgba(22,27,34,.9);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08)}
+@keyframes spin{to{transform:rotate(360deg)}}.spin{animation:spin 1s linear infinite}
+.mono{font-family:'JetBrains Mono',monospace}
+</style>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'#0078d4'}}}}</script>
+</head>
+<body class="bg-[#0d1117] text-[#e6edf3] min-h-screen dark">
+
+<!-- Sidebar -->
+<div class="fixed inset-y-0 left-0 w-64 bg-[#161b22] border-r border-[#30363d] flex flex-col z-30">
+  <div class="p-5 border-b border-[#30363d] flex items-center gap-3">
+    <div class="w-9 h-9 rounded-lg bg-[#0078d4] flex items-center justify-center"><span class="material-symbols-outlined text-white text-xl">shield</span></div>
+    <div><p class="font-bold text-sm text-white">Security Suite</p><p class="text-[#8b949e] text-xs">Pentest Platform</p></div>
+  </div>
+  <nav class="flex-1 p-4 space-y-1">
+    <a href="#" id="dashLink" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">dashboard</span>Dashboard</a>
+    <a href="Nmap.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">hub</span>Nmap Scanner</a>
+    <a href="SQL.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">storage</span>SQL Scanner</a>
+    <a href="Wfuzz.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#0078d4]/20 text-[#0078d4] font-medium text-sm"><span class="material-symbols-outlined text-xl">wysiwyg</span>Wfuzz</a>
+    <a href="OWASP.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">policy</span>OWASP Scan</a>
+    <a href="Shodan.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">public</span>Shodan</a>
+    <a href="TheHive.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">hive</span>TheHive</a>
+    <a href="Reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">description</span>Reports</a>
+  </nav>
+  <div class="p-4 border-t border-[#30363d]">
+    <p class="text-white text-sm font-medium mb-2" id="sidebarName">User</p>
+    <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium"><span class="material-symbols-outlined text-base">logout</span>Sign Out</button>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="ml-64 min-h-screen">
+  <header class="sticky top-0 z-20 bg-[#0d1117]/80 backdrop-blur border-b border-[#30363d] px-8 py-4">
+    <h1 class="text-xl font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined text-[#0078d4]">wysiwyg</span>Wfuzz Web Fuzzer</h1>
+    <p class="text-[#8b949e] text-sm">Directory and file discovery via web fuzzing</p>
+  </header>
+
+  <main class="p-8 max-w-4xl space-y-5">
+
+    <!-- Target -->
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-7 h-7 rounded-full bg-[#0078d4] flex items-center justify-center text-white text-xs font-bold">1</div>
+        <h2 class="font-bold text-white">Target URL</h2>
+        <span class="text-[#8b949e] text-xs ml-1">(FUZZ keyword is added automatically)</span>
+      </div>
+      <input id="targetInput" type="url" placeholder="https://example.com"
+        class="w-full px-4 py-3 rounded-xl bg-[#0d1117] border border-[#30363d] text-white placeholder-[#8b949e] focus:outline-none focus:border-[#0078d4] text-sm font-mono mb-3"/>
+      <p class="text-[#8b949e] text-xs mb-3">Will fuzz: <span id="fuzzPreview" class="text-[#0078d4] font-mono">https://example.com/FUZZ</span></p>
+      <button id="pingBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0078d4]/10 hover:bg-[#0078d4]/20 text-[#0078d4] text-sm font-medium border border-[#0078d4]/30 transition-all">
+        <span class="material-symbols-outlined text-base">wifi_tethering</span>Ping Target
+      </button>
+      <div id="pingResult" class="hidden mt-3"></div>
+    </div>
+
+    <!-- Wordlist + Options -->
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-7 h-7 rounded-full bg-[#0078d4] flex items-center justify-center text-white text-xs font-bold">2</div>
+        <h2 class="font-bold text-white">Fuzzing Options</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="text-[#8b949e] text-xs uppercase font-semibold block mb-2">Wordlist</label>
+          <select id="wordlistSelect" class="w-full px-3 py-2.5 rounded-xl bg-[#0d1117] border border-[#30363d] text-white text-sm focus:outline-none focus:border-[#0078d4]">
+            <option value="common">Common Paths</option>
+            <option value="directory">Directories</option>
+            <option value="files">Files & Extensions</option>
+            <option value="parameters">URL Parameters</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[#8b949e] text-xs uppercase font-semibold block mb-2">Threads</label>
+          <input id="threadsInput" type="number" value="10" min="1" max="50"
+            class="w-full px-3 py-2.5 rounded-xl bg-[#0d1117] border border-[#30363d] text-white text-sm focus:outline-none focus:border-[#0078d4]"/>
+        </div>
+        <div>
+          <label class="text-[#8b949e] text-xs uppercase font-semibold block mb-2">Timeout (s)</label>
+          <input id="timeoutInput" type="number" value="5" min="1" max="30"
+            class="w-full px-3 py-2.5 rounded-xl bg-[#0d1117] border border-[#30363d] text-white text-sm focus:outline-none focus:border-[#0078d4]"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consent + Start -->
+    <div class="glass rounded-2xl p-6">
+      <label class="flex gap-3 cursor-pointer mb-5">
+        <input type="checkbox" id="consentCheck" class="mt-0.5 w-4 h-4 rounded border-[#30363d] text-[#0078d4]"/>
+        <span class="text-[#8b949e] text-sm">I confirm I have explicit authorization to fuzz this target.</span>
+      </label>
+      <button id="startBtn" disabled class="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-gradient-to-r from-[#0078d4] to-[#0063b1] text-white font-bold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+        <span class="material-symbols-outlined text-xl">play_circle</span>
+        <span id="startBtnText">Start Fuzzing</span>
+      </button>
+    </div>
+
+    <!-- Progress -->
+    <div id="progressSection" class="hidden glass rounded-2xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-symbols-outlined text-[#0078d4] text-2xl spin">sync</span>
+        <div><p class="text-white font-semibold">Fuzzing in progress…</p><p class="text-[#8b949e] text-sm">Please wait — this may take up to 2 minutes.</p></div>
+      </div>
+      <div class="h-1.5 bg-[#30363d] rounded-full overflow-hidden">
+        <div id="progressFill" class="h-full bg-gradient-to-r from-[#0078d4] to-blue-400 rounded-full transition-all" style="width:5%"></div>
+      </div>
+      <p class="text-[#8b949e] text-xs mt-2" id="progressTime">Elapsed: 0s</p>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="hidden space-y-5">
+      <!-- Stats -->
+      <div class="glass rounded-2xl p-6">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#0078d4]">bar_chart</span>Results
+        </h2>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] text-center">
+            <p class="text-2xl font-black text-[#0078d4]" id="foundCount">0</p>
+            <p class="text-[#8b949e] text-xs mt-1">Paths Found</p>
+          </div>
+          <div class="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] text-center">
+            <p class="text-2xl font-black text-[#8b949e]" id="durationDisplay">—</p>
+            <p class="text-[#8b949e] text-xs mt-1">Duration</p>
+          </div>
+          <div class="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] text-center">
+            <p class="text-2xl font-black" id="statusDisplay">—</p>
+            <p class="text-[#8b949e] text-xs mt-1">Status</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Findings Table -->
+      <div class="glass rounded-2xl p-6">
+        <h2 class="font-bold text-white mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-green-400">folder_open</span>Discovered Paths
+        </h2>
+        <div class="overflow-x-auto rounded-xl border border-[#30363d]">
+          <table class="w-full text-sm">
+            <thead class="bg-[#0d1117] border-b border-[#30363d]">
+              <tr class="text-[#8b949e] text-xs uppercase">
+                <th class="px-4 py-3 text-left">Path</th>
+                <th class="px-4 py-3 text-left">Status Code</th>
+                <th class="px-4 py-3 text-left">Size (chars)</th>
+                <th class="px-4 py-3 text-left">Words</th>
+              </tr>
+            </thead>
+            <tbody id="findingsTable" class="divide-y divide-[#30363d]"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  if(!sessionStorage.getItem('user_id')){window.location.href='signin.html';return;}
+  const role=sessionStorage.getItem('user_role');
+  document.getElementById('dashLink').href=role==='admin'?'Dashbord.html':'UserDashboard.html';
+  document.getElementById('sidebarName').textContent=sessionStorage.getItem('user_name')||'User';
+
+  let timer=null, pingOk=false;
+
+  function normalize(raw){
+    raw=raw.trim().replace(/^https?:\/\//i,'').split('/')[0].split('?')[0].split('#')[0];
+    return raw.trim();
+  }
+
+  function showPingResult(ok,d,msg,loading){
+    const b=document.getElementById('pingResult');b.classList.remove('hidden');
+    if(loading){b.className='p-4 rounded-xl border border-[#30363d] bg-[#0d1117] text-[#8b949e] text-sm flex gap-2';b.innerHTML=`<span class="material-symbols-outlined spin">sync</span>${msg}`;return;}
+    if(ok){
+      b.className='p-4 rounded-xl border border-green-500/30 bg-green-500/5';
+      const ip=d?.ip_address||'';const lat=d?.latency_ms!=null?d.latency_ms+'ms':'N/A';
+      b.innerHTML=`<p class="text-green-400 font-semibold text-sm mb-1 flex items-center gap-1"><span class="material-symbols-outlined text-base">check_circle</span>${msg}</p><p class="text-[#8b949e] text-xs">${ip?'IP: '+ip+' · ':''}Latency: ${lat} — Fuzzing enabled.</p>`;
+    }else{
+      b.className='p-4 rounded-xl border border-red-500/30 bg-red-500/5';
+      b.innerHTML=`<p class="text-red-400 font-semibold text-sm flex items-center gap-1"><span class="material-symbols-outlined text-base">cancel</span>${msg||'Unreachable'}</p><p class="text-[#8b949e] text-xs mt-1">Target unreachable — fuzzing blocked until ping succeeds.</p>`;
+    }
+  }
+
+  document.getElementById('pingBtn').addEventListener('click',async function(){
+    const raw=document.getElementById('targetInput').value;
+    if(!raw.trim()){showPingResult(false,null,'Enter a target URL first.');return;}
+    const host=normalize(raw);
+    this.disabled=true;
+    this.innerHTML='<span class="material-symbols-outlined spin">sync</span>Pinging…';
+    showPingResult(null,null,'Checking connectivity…',true);
+    try{
+      const r=await fetch(`${API_URL}/api/ping`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:host})});
+      const d=await r.json();
+      if(d.status==='error'){pingOk=false;showPingResult(false,null,d.message);}
+      else{pingOk=d.reachable;showPingResult(d.reachable,d,d.message);}
+    }catch(e){pingOk=false;showPingResult(false,null,'Backend error: '+e.message);}
+    this.disabled=false;
+    this.innerHTML='<span class="material-symbols-outlined text-base">wifi_tethering</span>Ping Target';
+    document.getElementById('startBtn').disabled=!pingOk||!document.getElementById('consentCheck').checked;
+  });
+
+  document.getElementById('consentCheck').addEventListener('change',function(){
+    document.getElementById('startBtn').disabled=!this.checked||!pingOk;
+  });
+
+  document.getElementById('targetInput').addEventListener('input',function(){
+    const val=this.value.trim().replace(/\/+$/,'');
+    document.getElementById('fuzzPreview').textContent=(val||'https://example.com')+'/FUZZ';
+  });
+
+  document.getElementById('startBtn').addEventListener('click',async function(){
+    const target=document.getElementById('targetInput').value.trim();
+    if(!target){showPingResult(false,null,'Enter a target URL first.');return;}
+    if(!pingOk){showPingResult(false,null,'Ping the target first — fuzzing is blocked until connectivity is confirmed.');return;}
+    const wordlist=document.getElementById('wordlistSelect').value;
+    const threads=parseInt(document.getElementById('threadsInput').value)||10;
+
+    document.getElementById('resultsSection').classList.add('hidden');
+    document.getElementById('progressSection').classList.remove('hidden');
+    this.disabled=true;
+    document.getElementById('startBtnText').textContent='Fuzzing…';
+
+    let elapsed=0;
+    const fill=document.getElementById('progressFill');
+    const tEl=document.getElementById('progressTime');
+    clearInterval(timer);
+    timer=setInterval(()=>{elapsed++;tEl.textContent=`Elapsed: ${elapsed}s`;fill.style.width=Math.min(90,(elapsed/120)*100)+'%';},1000);
+
+    try{
+      const res=await fetch(`${API_URL}/api/wfuzz`,{
+        method:'POST',credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({target,wordlist,threads,consent:true})
+      });
+      const data=await res.json();
+      clearInterval(timer);fill.style.width='100%';
+      document.getElementById('progressSection').classList.add('hidden');
+
+      if(data.status!=='success'){
+        showPingResult(false,null,'Scan failed: '+(data.message||'Unknown error'));
+        this.disabled=false;document.getElementById('startBtnText').textContent='Start Fuzzing';
+        document.getElementById('consentCheck').checked=false;
+        return;
+      }
+      renderResults(data);
+      this.disabled=false;document.getElementById('startBtnText').textContent='Start Fuzzing';
+    }catch(e){
+      clearInterval(timer);document.getElementById('progressSection').classList.add('hidden');
+      showPingResult(false,null,'Error: '+e.message);
+      this.disabled=false;document.getElementById('startBtnText').textContent='Start Fuzzing';
+      document.getElementById('consentCheck').checked=false;
+    }
+  });
+
+  function renderResults(data){
+    document.getElementById('resultsSection').classList.remove('hidden');
+    document.getElementById('resultsSection').scrollIntoView({behavior:'smooth'});
+
+    const results=data.results||{};
+    const findings=results.findings||[];
+    const hasErr=!!results.error;
+
+    document.getElementById('foundCount').textContent=findings.length;
+    document.getElementById('durationDisplay').textContent=(data.duration||0).toFixed(1)+'s';
+
+    if(hasErr){
+      document.getElementById('statusDisplay').textContent='Error';
+      document.getElementById('statusDisplay').className='text-2xl font-black text-red-400';
+    }else{
+      document.getElementById('statusDisplay').textContent=findings.length>0?'Found':'None';
+      document.getElementById('statusDisplay').className='text-2xl font-black '+(findings.length>0?'text-green-400':'text-[#8b949e]');
+    }
+
+    const tb=document.getElementById('findingsTable');
+    if(hasErr){
+      tb.innerHTML=`<tr><td colspan="4" class="px-4 py-6 text-center text-red-400 text-sm">${results.error}</td></tr>`;
+    }else if(findings.length){
+      const statusColor={200:'text-green-400',301:'text-blue-400',302:'text-blue-400',403:'text-orange-400',500:'text-red-400'};
+      tb.innerHTML=findings.map(f=>{
+        const code=String(f.code||'');
+        const cls=statusColor[f.code]||'text-[#8b949e]';
+        return `<tr class="hover:bg-white/2 transition-colors">
+          <td class="px-4 py-3 font-mono text-white text-sm">${data.target}/${f.path||''}</td>
+          <td class="px-4 py-3 font-bold ${cls}">${code}</td>
+          <td class="px-4 py-3 text-[#8b949e] text-xs">${f.chars||'—'}</td>
+          <td class="px-4 py-3 text-[#8b949e] text-xs">${f.words||'—'}</td>
+        </tr>`;
+      }).join('');
+    }else{
+      tb.innerHTML='<tr><td colspan="4" class="px-4 py-8 text-center text-[#8b949e] text-sm">No paths discovered.</td></tr>';
+    }
+  }
+})();
+</script>
+</body></html>
