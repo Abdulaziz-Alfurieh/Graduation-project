@@ -173,7 +173,7 @@ body{font-family:'Inter',sans-serif}
     clearInterval(timer);
     timer=setInterval(()=>{elapsed++;tEl.textContent=`Elapsed: ${elapsed}s`;fill.style.width=Math.min(90,(elapsed/180)*100)+'%';},1000);
     try{
-      const res=await fetch(`${API_URL}/api/scan/nikto`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({target,consent:true})});
+      const res=await fetch(`${API_URL}/api/scan`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'nikto',target,consent:true})});
       if(!res.ok)throw new Error(`Server error ${res.status}`);
       const data=await res.json();
       clearInterval(timer);fill.style.width='100%';
