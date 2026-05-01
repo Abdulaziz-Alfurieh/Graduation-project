@@ -182,10 +182,11 @@ body{font-family:'Inter',sans-serif}
 
 <script>
 (function(){
-  if(!sessionStorage.getItem('user_id')){window.location.href='signin.html';return;}
-  const role=sessionStorage.getItem('user_role');
-  document.getElementById('dashLink').href=role==='admin'?'Dashbord.html':'UserDashboard.html';
-  document.getElementById('sidebarName').textContent=sessionStorage.getItem('user_name')||'User';
+  const auth=checkAuth();
+  if(!auth)return;
+  const user=getUser();
+  document.getElementById('dashLink').href=user.role==='admin'?'Dashbord.html':'UserDashboard.html';
+  document.getElementById('sidebarName').textContent=user.name||'User';
 
   let scanId=null,timer=null;
 
@@ -225,10 +226,10 @@ body{font-family:'Inter',sans-serif}
     timer=setInterval(()=>{elapsed++;tEl.textContent=`Elapsed: ${elapsed}s`;fill.style.width=Math.min(90,(elapsed/120)*100)+'%';},1000);
 
     try{
-      const res=await fetch(`${API_URL}/api/scan`,{
+      const res=await fetch(`${API_URL}/api/scan/harvester`,{
         method:'POST',credentials:'include',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({tool:'harvester',target})
+        body:JSON.stringify({target})
       });
       if(!res.ok)throw new Error(`Server error ${res.status}`);
       const data=await res.json();
