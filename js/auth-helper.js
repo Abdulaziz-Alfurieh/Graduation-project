@@ -3,7 +3,7 @@
 
 // Dynamically determine API URL based on frontend host to support both localhost and LAN IPs
 const apiHost = window.location.hostname || 'localhost';
-const API_URL = `http://${apiHost}:5000`;
+const API_URL = 'http://localhost:5000';
 console.log('API URL set to:', API_URL);
 
 // Check if user is authenticated

@@ -143,7 +143,7 @@ body{font-family:'Inter',sans-serif}
     info:'bg-blue-500/15 text-blue-400'
   };
 
-  function owaspCategory(desc){
+  function mapOWASP(desc){
     const d=(desc||'').toLowerCase();
     if(d.includes('sql'))return'A03:2021 Injection';
     if(d.includes('xss')||d.includes('script'))return'A03:2021 Injection';
@@ -191,7 +191,7 @@ body{font-family:'Inter',sans-serif}
       tb.innerHTML=vulns.map((v,i)=>{
         const sev=(v.severity||'info').toLowerCase();
         const sc=SEV[sev]||SEV.info;
-        const owasp=owaspCategory(v.description||v.title||'');
+        const owasp=mapOWASP(v.description||v.title||'');
         const id=v.id||`NIKTO-${String(i+1).padStart(3,'0')}`;
         const uri=v.uri||v.url||'—';
         return`<tr class="hover:bg-white/2 transition-colors">
