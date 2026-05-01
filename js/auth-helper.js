@@ -77,6 +77,15 @@ function displayUserInfo(userOrElementId) {
     }
 }
 
+function getUser() {
+    return {
+        id:    sessionStorage.getItem('user_id'),
+        email: sessionStorage.getItem('user_email'),
+        name:  sessionStorage.getItem('user_name'),
+        role:  sessionStorage.getItem('user_role')
+    };
+}
+
 // Initialize auth on page load (optional, can be called manually)
 // document.addEventListener('DOMContentLoaded', function() {
 //    const user = checkAuth();
