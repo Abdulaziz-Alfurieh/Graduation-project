@@ -32,7 +32,7 @@ body{font-family:'Inter',sans-serif}
     <a href="SQL.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">storage</span>SQL Scanner</a>
     <a href="Wfuzz.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">wysiwyg</span>Wfuzz</a>
     <a href="OWASP.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">policy</span>OWASP Scan</a>
-    <a href="Harvester.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#0078d4]/20 text-[#0078d4] font-medium text-sm"><span class="material-symbols-outlined text-xl">travel_explore</span>Harvester</a>
+    <a href="Harvester.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#0078d4] text-white font-semibold text-sm"><span class="material-symbols-outlined text-xl">travel_explore</span>Harvester</a>
     <a href="Nikto.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">bug_report</span>Nikto</a>
     <a href="Reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">description</span>Reports</a>
   </nav>
@@ -226,10 +226,10 @@ body{font-family:'Inter',sans-serif}
     timer=setInterval(()=>{elapsed++;tEl.textContent=`Elapsed: ${elapsed}s`;fill.style.width=Math.min(90,(elapsed/120)*100)+'%';},1000);
 
     try{
-      const res=await fetch(`${API_URL}/api/scan`,{
+      const res=await fetch(`${API_URL}/api/scan/harvester`,{
         method:'POST',credentials:'include',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({tool:'harvester',target})
+        body:JSON.stringify({target})
       });
       if(!res.ok)throw new Error(`Server error ${res.status}`);
       const data=await res.json();

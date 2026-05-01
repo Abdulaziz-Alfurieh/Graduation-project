@@ -17,7 +17,7 @@ body{font-family:'Inter',sans-serif}
 .shimmer::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);animation:slide 1.5s ease-in-out infinite}
 .scan-opt{cursor:pointer;transition:all .2s;border:2px solid #30363d}
 .scan-opt:hover{border-color:#0078d4}
-.scan-opt.selected{border-color:#0078d4!important;background:rgba(0,120,212,.12)!important}
+.scan-opt.selected{border-color:rgba(0,120,212,.4)!important;background:rgba(0,120,212,.08)!important}
 .scan-check{opacity:0;transform:scale(0);transition:all .2s}
 .scan-opt.selected .scan-check{opacity:1;transform:scale(1)}
 .vuln-card{border-left:3px solid transparent}
@@ -36,12 +36,12 @@ body{font-family:'Inter',sans-serif}
   </div>
   <nav class="flex-1 p-4 space-y-1">
     <a href="#" id="dashLink" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">dashboard</span>Dashboard</a>
-    <a href="Nmap.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#0078d4]/20 text-[#0078d4] font-medium text-sm"><span class="material-symbols-outlined text-xl">hub</span>Nmap Scanner</a>
+    <a href="Nmap.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#0078d4] text-white font-semibold text-sm"><span class="material-symbols-outlined text-xl">hub</span>Nmap Scanner</a>
     <a href="SQL.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">storage</span>SQL Scanner</a>
     <a href="Wfuzz.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">wysiwyg</span>Wfuzz</a>
     <a href="OWASP.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">policy</span>OWASP Scan</a>
-    <a href="Shodan.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">public</span>Shodan</a>
-    <a href="TheHive.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">hive</span>TheHive</a>
+    <a href="Harvester.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">travel_explore</span>Harvester</a>
+    <a href="Nikto.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">bug_report</span>Nikto</a>
     <a href="Reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-[#8b949e] hover:text-white text-sm"><span class="material-symbols-outlined text-xl">description</span>Reports</a>
   </nav>
   <div class="p-4 border-t border-[#30363d]">
@@ -199,10 +199,12 @@ body{font-family:'Inter',sans-serif}
 
 <script>
 (function(){
-  if(!sessionStorage.getItem('user_id')){window.location.href='signin.html';return;}
-  const role=sessionStorage.getItem('user_role');
+  const auth=checkAuth();
+  if(!auth)return;
+  const user=getUser();
+  const role=user.role;
   document.getElementById('dashLink').href=role==='admin'?'Dashbord.html':'UserDashboard.html';
-  document.getElementById('sidebarName').textContent=sessionStorage.getItem('user_name')||'User';
+  document.getElementById('sidebarName').textContent=user.name||'User';
 
   let selectedType='normal', scanId=null, pingOk=false, pingDone=false, timer=null;
 
@@ -413,6 +415,7 @@ body{font-family:'Inter',sans-serif}
     document.getElementById('reportBtnText').textContent='Generating…';
     try{
       const res=await fetch(`${API_URL}/api/reports/generate`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({scan_id:scanId})});
+      if(!res.ok)throw new Error('Server error '+res.status);
       const data=await res.json();
       document.getElementById('rptIcon').classList.remove('spin');
       if(data.status==='success'){
