@@ -189,6 +189,8 @@ body{font-family:'Inter',sans-serif}
 
   let scanId=null,timer=null;
 
+  function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
   function fillTable(tbodyId,items,emptyMsg){
     const tb=document.getElementById(tbodyId);
     if(!items||!items.length){
@@ -196,7 +198,7 @@ body{font-family:'Inter',sans-serif}
       return;
     }
     tb.innerHTML=items.map(v=>`<tr class="hover:bg-white/2 transition-colors">
-      <td class="px-4 py-3 font-mono text-sm text-white">${v}</td>
+      <td class="px-4 py-3 font-mono text-sm text-white">${esc(v)}</td>
     </tr>`).join('');
   }
 
@@ -228,27 +230,29 @@ body{font-family:'Inter',sans-serif}
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({tool:'harvester',target})
       });
+      if(!res.ok)throw new Error(`Server error ${res.status}`);
       const data=await res.json();
       clearInterval(timer);fill.style.width='100%';
       ps.classList.add('hidden');
-      if(data.status!=='success'){alert('Scan failed: '+(data.message||'Unknown'));}
-      else{scanId=data.scan_id;renderResults(data);}
+      if(data?.status!=='success'){alert('Scan failed: '+(data?.message||'Unknown'));}
+      else{scanId=data.scan_id??null;renderResults(data);}
     }catch(e){
-      clearInterval(timer);ps.classList.add('hidden');alert('Error: '+e.message);
+      clearInterval(timer);fill.style.width='0%';ps.classList.add('hidden');
+      alert('Error: '+e.message);
+    }finally{
+      btn.disabled=false;
+      document.getElementById('runIcon').textContent='travel_explore';
+      document.getElementById('runIcon').classList.remove('spin');
+      document.getElementById('runBtnText').textContent='Run Harvester';
     }
-
-    btn.disabled=false;
-    document.getElementById('runIcon').textContent='travel_explore';
-    document.getElementById('runIcon').classList.remove('spin');
-    document.getElementById('runBtnText').textContent='Run Harvester';
   });
 
   function renderResults(data){
-    const r=data.results||{};
-    const emails=r.emails||[];
-    const subdomains=r.subdomains||[];
-    const ips=r.ips||[];
-    const hosts=r.hosts||[];
+    const r=data?.results??{};
+    const emails=r?.emails??[];
+    const subdomains=r?.subdomains??[];
+    const ips=r?.ips??[];
+    const hosts=r?.hosts??[];
 
     document.getElementById('emailCount').textContent=emails.length;
     document.getElementById('subdomainCount').textContent=subdomains.length;
@@ -267,25 +271,36 @@ body{font-family:'Inter',sans-serif}
   document.getElementById('generateReportBtn').addEventListener('click',async function(){
     if(!scanId){alert('Run a scan first.');return;}
     this.disabled=true;
-    document.getElementById('rptIcon').textContent='sync';document.getElementById('rptIcon').classList.add('spin');
-    document.getElementById('reportBtnText').textContent='Generating…';
+    const rptIcon=document.getElementById('rptIcon');
+    const reportBtnText=document.getElementById('reportBtnText');
+    rptIcon.textContent='sync';rptIcon.classList.add('spin');
+    reportBtnText.textContent='Generating…';
     try{
       const res=await fetch(`${API_URL}/api/reports/generate`,{
         method:'POST',credentials:'include',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({scan_id:scanId})
       });
+      if(!res.ok)throw new Error(`Server error ${res.status}`);
       const data=await res.json();
-      document.getElementById('rptIcon').classList.remove('spin');
-      if(data.status==='success'){
-        document.getElementById('rptIcon').textContent='check_circle';
-        document.getElementById('reportBtnText').textContent='Report Generated!';
+      rptIcon.classList.remove('spin');
+      if(data?.status==='success'){
+        rptIcon.textContent='check_circle';
+        reportBtnText.textContent='Report Generated!';
         const ld=document.getElementById('reportLinks');ld.classList.remove('hidden');ld.innerHTML='';
         if(data.downloads?.json){const a=document.createElement('a');a.href=API_URL+data.downloads.json;a.download='';a.className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0078d4]/10 border border-[#0078d4]/30 text-[#0078d4] text-sm font-semibold hover:bg-[#0078d4]/20';a.innerHTML='<span class="material-symbols-outlined text-base">code</span>Download JSON';ld.appendChild(a);}
         if(data.downloads?.pdf){const a=document.createElement('a');a.href=API_URL+data.downloads.pdf;a.download='';a.className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/20';a.innerHTML='<span class="material-symbols-outlined text-base">picture_as_pdf</span>Download PDF';ld.appendChild(a);}
         const rr=document.createElement('a');rr.href='Reports.html';rr.className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-[#30363d] text-[#8b949e] text-sm font-semibold hover:bg-white/10';rr.innerHTML='<span class="material-symbols-outlined text-base">folder_open</span>All Reports';ld.appendChild(rr);
-      }else{alert('Report failed: '+(data.message||''));document.getElementById('rptIcon').textContent='picture_as_pdf';document.getElementById('reportBtnText').textContent='Generate PDF + JSON Report';this.disabled=false;}
-    }catch(e){alert('Error: '+e.message);document.getElementById('rptIcon').textContent='picture_as_pdf';document.getElementById('reportBtnText').textContent='Generate PDF + JSON Report';this.disabled=false;}
+      }else{
+        throw new Error(data?.message||'Report generation failed');
+      }
+    }catch(e){
+      rptIcon.classList.remove('spin');
+      rptIcon.textContent='picture_as_pdf';
+      reportBtnText.textContent='Generate PDF + JSON Report';
+      alert('Error: '+e.message);
+      this.disabled=false;
+    }
   });
 })();
 </script>
