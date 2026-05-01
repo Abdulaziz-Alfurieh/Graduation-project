@@ -226,10 +226,10 @@ body{font-family:'Inter',sans-serif}
     timer=setInterval(()=>{elapsed++;tEl.textContent=`Elapsed: ${elapsed}s`;fill.style.width=Math.min(90,(elapsed/120)*100)+'%';},1000);
 
     try{
-      const res=await fetch(`${API_URL}/api/scan/harvester`,{
+      const res=await fetch(`${API_URL}/api/scan`,{
         method:'POST',credentials:'include',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({target})
+        body:JSON.stringify({tool:'harvester',target})
       });
       if(!res.ok)throw new Error(`Server error ${res.status}`);
       const data=await res.json();
