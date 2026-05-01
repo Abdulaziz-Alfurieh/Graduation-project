@@ -1,5 +1,5 @@
 // Authentication Helper - Include in all tool pages
-// Add this script to Nmap.html, SQL.html, OWASP.html, Wfuzz.html, Shodan.html, TheHive.html
+// Add this script to Nmap.html, SQL.html, OWASP.html, Wfuzz.html, Nikto.html, Harvester.html
 
 // Dynamically determine API URL based on frontend host to support both localhost and LAN IPs
 const apiHost = window.location.hostname || 'localhost';
