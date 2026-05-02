@@ -139,7 +139,7 @@ button:focus-visible,
       <div class="h-1.5 bg-[#30363d] rounded-full overflow-hidden">
         <div id="progressFill" class="h-full bg-gradient-to-r from-[#0078d4] to-blue-400 rounded-full transition-all shimmer" style="width:5%"></div>
       </div>
-      <p class="text-[#8b949e] text-xs mt-2" id="progressTime">Elapsed: 0s</p>
+      <p class="text-[#8b949e] text-xs mt-2 text-center" id="elapsedTimer">Elapsed: 0s</p>
     </div>
 
     <!-- Results -->
@@ -216,7 +216,9 @@ button:focus-visible,
   document.getElementById('dashLink').href=role==='admin'?'Dashbord.html':'UserDashboard.html';
   document.getElementById('sidebarName').textContent=user.name||'User';
 
-  let selectedType='normal', scanId=null, pingOk=false, pingDone=false, timer=null;
+  let selectedType='normal', scanId=null, pingOk=false, pingDone=false;
+  let elapsedSeconds = 0;
+  let timerInterval = null;
 
   const SEV={critical:'bg-red-500/15 text-red-400',high:'bg-orange-500/15 text-orange-400',medium:'bg-yellow-500/15 text-yellow-400',low:'bg-green-500/15 text-green-400',info:'bg-blue-500/15 text-blue-400'};
   const GC={A:'text-green-400',B:'text-blue-400',C:'text-yellow-400',D:'text-orange-400',F:'text-red-400'};
@@ -269,12 +271,46 @@ button:focus-visible,
     b.innerHTML=`<p class="text-red-400 font-semibold text-sm flex items-center gap-1"><span class="material-symbols-outlined text-base">cancel</span>${msg}</p>`;
   }
 
+  function validateTarget(value,tool){
+    const cleaned=value.trim();
+    const isIP=/^(\d{1,3}\.){3}\d{1,3}/.test(cleaned);
+    if(!cleaned){showError('Please enter a target domain.');return false;}
+    if(isIP){showError('IP addresses are not accepted. Please enter a domain name.');return false;}
+    if(/^https?:\/\//i.test(cleaned)){showError('Remove http:// — enter domain only e.g. example.com');return false;}
+    if(/\s/.test(cleaned)){showError('Domain cannot contain spaces.');return false;}
+    return cleaned;
+  }
+
+  function startTimer(){
+    elapsedSeconds=0;
+    const timerEl=document.getElementById('elapsedTimer');
+    if(timerEl)timerEl.textContent='Elapsed: 0s';
+    stopTimer();
+    timerInterval=setInterval(()=>{
+      elapsedSeconds++;
+      if(timerEl)timerEl.textContent='Elapsed: '+elapsedSeconds+'s';
+    },1000);
+  }
+
+  function stopTimer(){
+    if(timerInterval){
+      clearInterval(timerInterval);
+      timerInterval=null;
+    }
+  }
+
   function normalize(raw){
     raw=raw.trim().replace(/^https?:\/\//i,'');
     raw=raw.split('/')[0].split('?')[0].split('#')[0];
     if(!raw.match(/\[.*\]/))raw=raw.split(':')[0];
     return raw.trim();
   }
+
+  document.getElementById('targetInput').addEventListener('input',function(){
+    document.getElementById('pingResult').classList.add('hidden');
+    pingDone=false;
+    pingOk=false;
+  });
 
   // PING
   document.getElementById('pingBtn').addEventListener('click',async function(){
@@ -310,8 +346,8 @@ button:focus-visible,
 
   // SCAN
   document.getElementById('startScanBtn').addEventListener('click',async function(){
-    const target=normalize(document.getElementById('targetInput').value);
-    if(!target){showError('Enter a target first.');return;}
+    const target=validateTarget(document.getElementById('targetInput').value,'nmap');
+    if(!target)return;
     if(!pingDone){
       showError('Run a Ping check first — scan is blocked until the target is reachable.');
       return;
@@ -323,20 +359,18 @@ button:focus-visible,
     document.getElementById('targetInput').value=target;
     document.getElementById('resultsSection').classList.add('hidden');
     const ps=document.getElementById('progressSection');ps.classList.remove('hidden');
+    startTimer();
     this.disabled=true;
     document.getElementById('progressTitle').textContent=`Running ${selectedType} scan on ${target}…`;
-    let elapsed=0;const fill=document.getElementById('progressFill');const tEl=document.getElementById('progressTime');
-    const max={normal:120,medium:300,strong:600}[selectedType]||300;
-    clearInterval(timer);
-    timer=setInterval(()=>{elapsed++;tEl.textContent=`Elapsed: ${elapsed}s`;fill.style.width=Math.min(90,(elapsed/max)*100)+'%';},1000);
+    const fill=document.getElementById('progressFill');fill.style.width='5%';
     try{
       const res=await fetch(`${API_URL}/api/scan`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({target,scan_type:selectedType,consent:true})});
       const data=await res.json();
-      clearInterval(timer);fill.style.width='100%';
+      stopTimer();fill.style.width='100%';
       ps.classList.add('hidden');
       if(data.status!=='success'){alert('Scan failed: '+(data.message||'Unknown'));this.disabled=false;document.getElementById('consentCheck').checked=false;return;}
       scanId=data.scan_id;renderResults(data);this.disabled=false;
-    }catch(e){clearInterval(timer);ps.classList.add('hidden');alert('Error: '+e.message);this.disabled=false;document.getElementById('consentCheck').checked=false;}
+    }catch(e){stopTimer();ps.classList.add('hidden');alert('Error: '+e.message);this.disabled=false;document.getElementById('consentCheck').checked=false;}
   });
 
   function renderResults(data){
@@ -432,6 +466,7 @@ button:focus-visible,
         document.getElementById('reportBtnText').textContent='Report Generated!';
         const ld=document.getElementById('reportLinks');ld.classList.remove('hidden');ld.innerHTML='';
         if(data.downloads?.json){const a=document.createElement('a');a.href=API_URL+data.downloads.json;a.download='';a.className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0078d4]/10 border border-[#0078d4]/30 text-[#0078d4] text-sm font-semibold hover:bg-[#0078d4]/20';a.innerHTML='<span class="material-symbols-outlined text-base">code</span>Download JSON';ld.appendChild(a);}
+        if(data.downloads?.csv){const a=document.createElement('a');a.href=API_URL+data.downloads.csv;a.download='';a.className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-semibold hover:bg-green-500/20 transition-all';a.innerHTML='<span class="material-symbols-outlined text-base">table_view</span>Download CSV';ld.appendChild(a);}
         if(data.downloads?.pdf){const a=document.createElement('a');a.href=API_URL+data.downloads.pdf;a.download='';a.className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/20';a.innerHTML='<span class="material-symbols-outlined text-base">picture_as_pdf</span>Download PDF';ld.appendChild(a);}
         const rr=document.createElement('a');rr.href='Reports.html';rr.className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-[#30363d] text-[#8b949e] text-sm font-semibold hover:bg-white/10';rr.innerHTML='<span class="material-symbols-outlined text-base">folder_open</span>All Reports';ld.appendChild(rr);
       }else{alert('Report failed: '+(data.message||''));document.getElementById('rptIcon').textContent='picture_as_pdf';document.getElementById('reportBtnText').textContent='Generate PDF + JSON Report';this.disabled=false;}

@@ -6,20 +6,6 @@ const apiHost = window.location.hostname || 'localhost';
 const API_URL = 'http://localhost:5000';
 console.log('API URL set to:', API_URL);
 
-// Check if user is authenticated
-function checkAuth() {
-    const userName = sessionStorage.getItem('user_name');
-    const userRole = sessionStorage.getItem('user_role');
-
-    if (!userName) {
-        // Not logged in, redirect to signin
-        window.location.href = 'signin.html';
-        return false;
-    }
-
-    return { userName, userRole };
-}
-
 // Navigate to correct dashboard based on role
 function goToDashboard() {
     const userRole = sessionStorage.getItem('user_role');
@@ -29,21 +15,6 @@ function goToDashboard() {
     } else {
         window.location.href = 'UserDashboard.html';
     }
-}
-
-// Logout function
-async function logout() {
-    try {
-        await fetch(`${API_URL}/api/auth/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
-
-    sessionStorage.clear();
-    window.location.href = 'signin.html';
 }
 
 // Display user info in header
@@ -76,21 +47,6 @@ function displayUserInfo(userOrElementId) {
         }
     }
 }
-
-function getUser() {
-    return {
-        id:    sessionStorage.getItem('user_id'),
-        email: sessionStorage.getItem('user_email'),
-        name:  sessionStorage.getItem('user_name'),
-        role:  sessionStorage.getItem('user_role')
-    };
-}
-
-// Initialize auth on page load (optional, can be called manually)
-// document.addEventListener('DOMContentLoaded', function() {
-//    const user = checkAuth();
-//    if (user) displayUserInfo(user);
-// });
 
 // Required compatibility helpers
 function logout() {
