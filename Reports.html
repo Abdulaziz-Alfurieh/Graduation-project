@@ -229,9 +229,9 @@ button:focus-visible,
           } catch (e) { c.innerHTML = `<p class="text-red-400 text-sm py-4">Error: ${e.message}</p>`; }
         }
 
-        function renderReports(reports) {
-          const c = document.getElementById('reportsContainer');
-          if (!reports.length) {
+	        function renderReports(reports) {
+	          const c = document.getElementById('reportsContainer');
+	          if (!reports.length) {
             c.innerHTML = `
         <div class="text-center py-16">
           <span class="material-symbols-outlined text-6xl text-[#30363d] block mb-3">description</span>
@@ -241,16 +241,27 @@ button:focus-visible,
             <span class="material-symbols-outlined text-base">hub</span>Go to Scanner
           </a>
         </div>`;
-            return;
-          }
-          c.innerHTML = '<div class="space-y-3">' + reports.map(r => {
-            const sb = STATUS[r.status] || STATUS.completed;
-            const rb = SEV[r.risk_level] || SEV.info;
-            const date = r.created_at ? new Date(r.created_at).toLocaleString() : '—';
-            const owner = r.owner_id && role === 'admin' ? `<span class="text-[#8b949e] text-xs">User: ${r.owner_id.slice(0, 8)}…</span>` : '';
-            return `
-      <div class="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] hover:border-[#0078d4]/30 transition-all">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
+	            return;
+	          }
+	          const toolMeta = {
+	            nikto: { label: 'Nikto', cls: 'bg-red-500/10 text-red-400' },
+	            harvester: { label: 'Harvester', cls: 'bg-blue-500/10 text-blue-400' },
+	            nmap: { label: 'Nmap', cls: 'bg-green-500/10 text-green-400' },
+	            sqlmap: { label: 'SQLMap', cls: 'bg-orange-500/10 text-orange-400' },
+	            wfuzz: { label: 'Wfuzz', cls: 'bg-purple-500/10 text-purple-400' },
+	            unknown: { label: 'Unknown', cls: 'bg-gray-500/10 text-gray-400' }
+	          };
+	          c.innerHTML = '<div class="grid grid-cols-[1fr_auto_auto] gap-4 px-4 pb-2 text-[#8b949e] text-xs font-semibold uppercase"><span>Report</span><span>Tool</span><span>Status / Downloads</span></div><div class="space-y-3">' + reports.map(r => {
+	            const sb = STATUS[r.status] || STATUS.completed;
+	            const rb = SEV[r.risk_level] || SEV.info;
+	            const date = r.created_at ? new Date(r.created_at).toLocaleString() : '—';
+	            const owner = r.owner_id && role === 'admin' ? `<span class="text-[#8b949e] text-xs">User: ${r.owner_id.slice(0, 8)}…</span>` : '';
+	            const rawTool = String(r.tool || r.scan_type || r.type || 'unknown').toLowerCase();
+	            const normalizedTool = rawTool.includes('nikto') ? 'nikto' : rawTool.includes('harvester') ? 'harvester' : rawTool.includes('sql') ? 'sqlmap' : rawTool.includes('wfuzz') ? 'wfuzz' : rawTool.includes('nmap') || ['normal','medium','strong','quick'].includes(rawTool) ? 'nmap' : 'unknown';
+	            const tool = toolMeta[normalizedTool] || toolMeta.unknown;
+	            return `
+	      <div class="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] hover:border-[#0078d4]/30 transition-all">
+	        <div class="flex items-start justify-between gap-4 flex-wrap">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 rounded-lg bg-[#0078d4]/10 flex items-center justify-center flex-shrink-0">
               <span class="material-symbols-outlined text-[#0078d4]">shield</span>
@@ -260,9 +271,11 @@ button:focus-visible,
               <p class="text-[#8b949e] text-xs">${r.scan_type?.toUpperCase() || 'SCAN'} · ${date}</p>
               ${owner}
             </div>
-          </div>
-          <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
-            ${r.risk_level ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold ${rb}">${r.risk_level.toUpperCase()}</span>` : ''}
+	          </div>
+	          <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
+	            <span class="text-[#8b949e] text-xs font-semibold uppercase">Tool</span>
+	            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${tool.cls}">${tool.label}</span>
+	            ${r.risk_level ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold ${rb}">${r.risk_level.toUpperCase()}</span>` : ''}
             <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${sb}">${r.status}</span>
             ${r.has_json ? `<a href="${API_URL + r.downloads.json}" download class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#0078d4]/10 hover:bg-[#0078d4]/20 text-[#0078d4] text-xs font-semibold transition-colors"><span class="material-symbols-outlined text-sm">code</span>JSON</a>` : ''}
             ${r.has_pdf ? `<a href="${API_URL + r.downloads.pdf}" download class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold transition-colors"><span class="material-symbols-outlined text-sm">picture_as_pdf</span>PDF</a>` : ''}
@@ -270,7 +283,7 @@ button:focus-visible,
           </div>
         </div>
       </div>`;
-          }).join('') + '</div>';
+	          }).join('') + '</div>';
         }
 
         window.generateReport = async function (scanId) {

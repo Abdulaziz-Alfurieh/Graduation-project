@@ -67,6 +67,7 @@ button:focus,button:focus-visible,.btn:focus,.btn:focus-visible{outline:2px soli
     <div id="progressSection" class="hidden glass rounded-2xl p-6">
       <div class="flex items-center gap-3 mb-4"><span class="material-symbols-outlined text-[#0078d4] text-2xl spin">sync</span><div><p class="text-white font-semibold">Running Nikto scan...</p><p class="text-[#8b949e] text-sm">Please wait - do not close this page</p></div></div>
       <div class="h-1.5 bg-[#30363d] rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-[#0078d4] to-blue-400 rounded-full shimmer" style="width:75%"></div></div>
+      <p class="text-[#8b949e] text-xs mt-2 text-center" id="elapsedTimer">Elapsed: 0s</p>
     </div>
     <div id="resultsSection" class="hidden space-y-5">
       <div class="glass rounded-2xl p-6">
@@ -91,24 +92,55 @@ if(!sessionStorage.getItem('user_id')) window.location.href='signin.html';
 document.getElementById('sidebarName').textContent=sessionStorage.getItem('user_name')||'User';
 document.getElementById('dashLink').href=sessionStorage.getItem('user_role')==='admin'?'Dashbord.html':'UserDashboard.html';
 let scanId=null;
+let elapsedSeconds = 0;
+let timerInterval = null;
 const sevClass={critical:'bg-red-500/15 text-red-400',high:'bg-orange-500/15 text-orange-400',medium:'bg-yellow-500/15 text-yellow-400',low:'bg-green-500/15 text-green-400',info:'bg-blue-500/15 text-blue-400'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function mapRiskCategory(desc){const d=String(desc||'').toLowerCase();if(d.includes('sql'))return'A03:2021 Injection';if(d.includes('xss')||d.includes('script'))return'A03:2021 Injection';if(d.includes('config'))return'A05:2021 Misconfiguration';if(d.includes('outdated')||d.includes('version'))return'A06:2021 Vulnerable Components';if(d.includes('ssl')||d.includes('tls'))return'A02:2021 Cryptographic Failures';return'A07:2021 Auth Failures';}
 function showError(msg){const box=document.getElementById('errorBox');box.textContent=msg;box.classList.remove('hidden');}
+function validateTarget(value,tool){
+  const cleaned=value.trim();
+  const host=cleaned.replace(/^https?:\/\//i,'').split('/')[0].split('?')[0].split('#')[0];
+  const isIP=/^(\d{1,3}\.){3}\d{1,3}/.test(host);
+  if(!cleaned){showError('Please enter a target URL.');return false;}
+  if(isIP){showError('IP addresses are not accepted. Please use a domain-based URL.');return false;}
+  if(!/^https?:\/\//i.test(cleaned)){showError('URL must start with http:// or https://');return false;}
+  return cleaned;
+}
+function startTimer(){
+  elapsedSeconds=0;
+  const timerEl=document.getElementById('elapsedTimer');
+  if(timerEl)timerEl.textContent='Elapsed: 0s';
+  stopTimer();
+  timerInterval=setInterval(()=>{
+    elapsedSeconds++;
+    if(timerEl)timerEl.textContent='Elapsed: '+elapsedSeconds+'s';
+  },1000);
+}
+function stopTimer(){
+  if(timerInterval){
+    clearInterval(timerInterval);
+    timerInterval=null;
+  }
+}
 document.getElementById('consentCheck').addEventListener('change',e=>{document.getElementById('startScanBtn').disabled=!e.target.checked;});
+document.getElementById('targetInput').addEventListener('input',()=>{document.getElementById('errorBox').classList.add('hidden');});
 document.getElementById('startScanBtn').addEventListener('click',async function(){
-  const target=document.getElementById('targetInput').value.trim();
-  if(!target){showError('Enter a target URL first.');return;}
+  const target=validateTarget(document.getElementById('targetInput').value,'nikto');
+  if(!target)return;
+  document.getElementById('targetInput').value=target;
   document.getElementById('errorBox').classList.add('hidden');
   document.getElementById('resultsSection').classList.add('hidden');
   document.getElementById('progressSection').classList.remove('hidden');
+  startTimer();
   this.disabled=true;document.getElementById('startIcon').textContent='sync';document.getElementById('startIcon').classList.add('spin');document.getElementById('startBtnText').textContent='Scanning...';
   try{
     const res=await fetch(API_URL+'/api/scan/nikto',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:target,consent:true})});
     const data=await res.json();
     if(data.status!=='success')throw new Error(data.message||'Scan failed');
+    stopTimer();
     scanId=data.scan_id;renderResults(data.vulnerabilities||[]);
-  }catch(e){showError(e.message);}
+  }catch(e){stopTimer();showError(e.message);}
   document.getElementById('progressSection').classList.add('hidden');
   this.disabled=!document.getElementById('consentCheck').checked;document.getElementById('startIcon').textContent='play_circle';document.getElementById('startIcon').classList.remove('spin');document.getElementById('startBtnText').textContent='Start Scan';
 });
@@ -129,6 +161,7 @@ document.getElementById('generateReportBtn').addEventListener('click',async func
     const links=document.getElementById('reportLinks');links.classList.remove('hidden');links.innerHTML='';
     if(data.downloads?.pdf)links.innerHTML+=`<a href="${API_URL+data.downloads.pdf}" class="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold">Download PDF</a>`;
     if(data.downloads?.json)links.innerHTML+=`<a href="${API_URL+data.downloads.json}" class="px-4 py-2.5 rounded-xl bg-[#0078d4]/10 border border-[#0078d4]/30 text-[#0078d4] text-sm font-semibold">Download JSON</a>`;
+    if(data.downloads?.csv)links.innerHTML+=`<a href="${API_URL+data.downloads.csv}" class="px-4 py-2.5 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-semibold hover:bg-green-500/20 transition-all">Download CSV</a>`;
   }catch(e){showError(e.message);this.disabled=false;}
   document.getElementById('rptIcon').textContent='picture_as_pdf';document.getElementById('rptIcon').classList.remove('spin');document.getElementById('reportBtnText').textContent='Generate PDF + JSON Report';
 });
