@@ -141,7 +141,7 @@ if [ $TESTS_FAILED -eq 0 ]; then
     echo "Next steps:"
     echo "1. Start web server: python3 -m http.server 5500"
     echo "2. Open browser: http://localhost:5500"
-    echo "3. Login with: admin@security.com / admin123"
+    echo "3. Login with admin@security.com and ADMIN_PASSWORD from environment"
     echo "4. Test the Nmap interface"
     echo ""
     echo "For detailed testing guide, see:"
